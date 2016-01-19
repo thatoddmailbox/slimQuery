@@ -1,12 +1,16 @@
 window.slimQuery = {
-	noConflictFlag: false
+	noConflictFlag: false,
+	eventMap: {
+		click: "click",
+		ready: "DOMContentLoaded"
+	}
 };
 
 function sqElem(selector) {
 	if (selector !== document) {
 		this.dom = document.querySelectorAll(selector);
 	} else {
-		this.dom = document;
+		this.dom = [document];
 	}
 	return this;
 }
@@ -35,11 +39,20 @@ sqElem.prototype.html = function(newValue) {
 	return this;
 };
 
-sqElem.prototype.ready = function(callback) {
-	//this.dom.events
-	this.dom.addEventListener("DOMContentLoaded", function() {
-
+sqElem.prototype.on = function(event, callback) {
+	window.slimQuery.each(this.dom, function() {
+		this.addEventListener(window.slimQuery.eventMap[event], function(e) {
+			callback.call(e);
+		});
 	});
+};
+
+sqElem.prototype.ready = function(callback) {
+	return this.on("ready", callback);
+};
+
+sqElem.prototype.click = function(callback) {
+	return this.on("click", callback);
 };
 
 window.slimQuery.each = function(items, callback) {
