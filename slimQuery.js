@@ -19,8 +19,18 @@ sqElem.prototype.init = function(selector) {
 	return new sqElem(selector);
 }
 
+sqElem.prototype.css = function(propertyName, value) {
+	if (value === undefined) {
+		return window.getComputedStyle(propertyName);
+	}
+	window.slimQuery.each(this.dom, function() {
+		this.setAttribute("style", (this.getAttribute("style")||"") + propertyName + ":" + value + ";");
+	});
+	return this;
+};
+
 sqElem.prototype.text = function(newValue) {
-	if (newValue == undefined) {
+	if (newValue === undefined) {
 		return this.dom[0].innerText;
 	}
 	window.slimQuery.each(this.dom, function() {
@@ -30,7 +40,7 @@ sqElem.prototype.text = function(newValue) {
 };
 
 sqElem.prototype.html = function(newValue) {
-	if (newValue == undefined) {
+	if (newValue === undefined) {
 		return this.dom[0].innerHTML;
 	}
 	window.slimQuery.each(this.dom, function() {

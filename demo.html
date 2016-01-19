@@ -7,11 +7,16 @@
 			$(document).ready(function() {
 				$("#text").text("<strong>HTML doesn't work here!</strong>");
 				$("#html").html("<strong>HTML works here!</strong>");
+				$("#tagTest").click(function() {
+					console.log("yay");
+					$("button").css("color", "blue");
+				});
 			});
 		</script>
 	</head>
 	<body>
 		<div id="text">hello</div>
 		<div id="html">there</div>
+		<button id="tagTest">set all buttons to be blue</button>
 	</body>
 </html>
