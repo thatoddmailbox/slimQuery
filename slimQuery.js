@@ -10,6 +10,7 @@ slimQuery.eventMap = {
 	click: "click",
 	ready: "DOMContentLoaded"
 };
+slimQuery.eventTracker = {};
 slimQuery.support = {};
 
 slimQuery.Event = function(src, props) {
@@ -200,8 +201,25 @@ sqElem.prototype.one = function(event, callback) {
 	return this;
 };
 
+sqElem.prototype.off = function(event, callback) {
+	this.on(event, function() {
+		callback.call(this);
+		// TODO: stop allowing event to happen
+		// TODO: this will happen with the event system
+	});
+	return this;
+};
+
 sqElem.prototype.parent = function() {
 	return $(this[0].parentNode);
+};
+
+sqElem.prototype.scrollTop = function(val) {
+	if (val === undefined) {
+		return $(this)[0].scrollTop;
+	}
+	window.scrollTo(0, val); // TODO: don't reset scrollLeft
+	return this;
 };
 
 sqElem.prototype.show = function() {
