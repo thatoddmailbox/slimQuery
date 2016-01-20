@@ -34,6 +34,8 @@ function sqElem(selector) {
 	if (typeof selector === "function") {
 		// apparently this is a thing
 		$(document).ready(selector);
+	} else if (selector instanceof sqElem) {
+		return selector;
 	} else if (selector instanceof HTMLElement) {
 		this[0] = selector;
 		this.length++;
@@ -189,12 +191,13 @@ sqElem.prototype.on = function(event, callback) {
 	return this;
 };
 
-sqElem.prototype.ready = function(callback) {
-	return this.on("ready", callback);
-};
-
-sqElem.prototype.click = function(callback) {
-	return this.on("click", callback);
+sqElem.prototype.one = function(event, callback) {
+	this.on(event, function() {
+		callback.call(this);
+		// TODO: stop allowing event to happen
+		// TODO: this will happen with the event system
+	});
+	return this;
 };
 
 sqElem.prototype.trigger = function(event) {
@@ -205,14 +208,14 @@ sqElem.prototype.trigger = function(event) {
 
 slimQuery.each = function(items, callback) {
 	for (var i = 0; i < items.length; i++) {
-		callback.call(items[i], i);
+		callback.call(items[i], i, items[i]);
 	}
 };
 
 slimQuery.eachElem = function(items, callback) {
 	return slimQuery.each(items, function(i) {
 		if (typeof i === "number") {
-			callback.call(this, i);
+			callback.call(this, i, items[i]);
 		}
 	});
 };
@@ -262,6 +265,18 @@ slimQuery.proxy = function(fn, context) {
 slimQuery.uniqueId = function() {
 	return "slimQuery-" + Math.random().toString(36).substr(2, 10) + Math.random().toString(36).substr(2, 10);
 };
+
+// this is from jQuery
+slimQuery.each(("blur focus focusin focusout load resize scroll unload click dblclick " +
+	"mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave " +
+	"change select submit keydown keypress keyup error contextmenu ready").split(" "), function( i, name ) {
+	// Handle event binding
+	sqElem.prototype[name] = function(fn) {
+		return arguments.length > 0 ?
+			this.on(name, fn) :
+			this.trigger(name);
+	};
+});
 
 window.sQ = window.slimQuery;
 if (!slimQuery.noConflictFlag) {
