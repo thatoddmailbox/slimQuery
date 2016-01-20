@@ -133,7 +133,7 @@ sqElem.prototype.data = function(propertyName, value) {
 		if (this.attr("data-sq-private-id") === undefined) {
 			return undefined;
 		}
-		return slimQuery.data[this.attr("data-sq-private-id")];
+		return slimQuery.data[this.attr("data-sq-private-id")][propertyName];
 	}
 	var id = $(this[0]).attr("data-sq-private-id");
 	if (id === undefined) {
@@ -184,7 +184,7 @@ sqElem.prototype.html = function(newValue) {
 
 sqElem.prototype.on = function(event, callback) {
 	slimQuery.eachElem(this, function() {
-		this.addEventListener(slimQuery.eventMap[event], function(e) {
+		this.addEventListener(slimQuery.eventJsName(event), function(e) {
 			callback.call(e);
 		});
 	});
@@ -200,9 +200,23 @@ sqElem.prototype.one = function(event, callback) {
 	return this;
 };
 
-sqElem.prototype.trigger = function(event) {
-	// TODO: better event system
-	// it will stay stubbed until there is one
+sqElem.prototype.parent = function() {
+	return $(this[0].parentNode);
+};
+
+sqElem.prototype.show = function() {
+	slimQuery.eachElem(this, function() {
+		$(this).css("display", "inherit");
+	});
+	return this;
+};
+
+sqElem.prototype.trigger = function(eventStr) {
+	// TODO: trigger all of them
+	var evt = new Event(slimQuery.eventJsName(eventStr));
+	slimQuery.eachElem(this, function() {
+		this.dispatchEvent(evt);
+	});
 	return this;
 };
 
@@ -232,6 +246,10 @@ slimQuery.extend = function() {
 		}
 	}
 	return retVal;
+};
+
+slimQuery.eventJsName = function(name) {
+	return (slimQuery.eventMap[name] || "sQ-" + name);
 };
 
 slimQuery.find = function(search, start) {
