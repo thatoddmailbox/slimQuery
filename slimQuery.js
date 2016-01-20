@@ -34,22 +34,24 @@ function sqElem(selector) {
 		// apparently this is a thing
 		$(document).ready(selector);
 	} else if (selector instanceof HTMLElement) {
-		this.dom = [ selector ];
+		this[0] = selector;
+		this.length++;
 	} else if (selector instanceof Array) {
-		this.dom = selector;
+		this.addArray(selector);
 	} else if (selector instanceof NodeList) {
-		this.dom = slimQuery.nodeListToArray(selector);
+		this.addArray(slimQuery.nodeListToArray(selector));
 	} else if (selector !== document && selector !== window) {
-		this.dom = document.querySelectorAll(selector);
+		this.addArray(document.querySelectorAll(selector));
 	} else {
-		this.dom = [selector];
+		this[0] = selector;
+		this.length++;
 	}
 	return this;
 }
 
 sqElem.prototype = sqElem.fn = slimQuery.fn = {
 	jquery: "1.11.3", // this is for compatibility,
-	length: 0
+	length: 0,
 	noConflictFlag: false,
 	slimquery: "0.1"
 };
@@ -58,11 +60,21 @@ sqElem.prototype.init = function(selector) {
 	return new sqElem(selector);
 };
 
+sqElem.prototype.addArray = function(array) {
+	var obj = this;
+	var lenStart = this.length;
+	slimQuery.each(array, function(i) {
+		obj[lenStart + i] = this;
+		obj.length++;
+	});
+	return this;
+};
+
 sqElem.prototype.attr = function(propertyName, value) {
 	if (value === undefined) {
-		return (this.dom[0].getAttribute(propertyName)||undefined);
+		return (this[0].getAttribute(propertyName)||undefined);
 	}
-	slimQuery.each(this.dom, function() {
+	slimQuery.eachElem(this, function() {
 		this.setAttribute(propertyName, value);
 	});
 	return this;
@@ -73,11 +85,11 @@ sqElem.prototype.append = function(thing) {
 	if (thing instanceof HTMLElement) {
 		elem = [ thing ];
 	} else if (thing instanceof sqElem) {
-		elem = thing.dom;
+		elem = thing;
 	} else {
-		elem = $(thing).dom;
+		elem = $(thing);
 	}
-	slimQuery.each(this.dom, function() {
+	slimQuery.eachElem(this, function() {
 		var to = this;
 		slimQuery.each(elem, function() {
 			to.appendChild(this);
@@ -90,7 +102,7 @@ sqElem.prototype.css = function(propertyName, value) {
 	if (value === undefined) {
 		return window.getComputedStyle(propertyName);
 	}
-	slimQuery.each(this.dom, function() {
+	slimQuery.eachElem(this, function() {
 		this.setAttribute("style", (this.getAttribute("style")||"") + propertyName + ":" + value + ";");
 	});
 	return this;
@@ -103,14 +115,14 @@ sqElem.prototype.data = function(propertyName, value) {
 		}
 		return JSON.parse(this.attr("data-sq-private-" + propertyName));
 	}
-	slimQuery.each(this.dom, function() {
+	slimQuery.eachElem(this, function() {
 		$(this).attr("data-sq-private-" + propertyName, JSON.stringify(value));
 	});
 	return this;
 };
 
 sqElem.prototype.each = function(callback) {
-	return slimQuery.each(this.dom, callback);
+	return slimQuery.eachElem(this, callback);
 };
 
 sqElem.prototype.find = function(selector) {
@@ -118,14 +130,15 @@ sqElem.prototype.find = function(selector) {
 };
 
 sqElem.prototype.splice = function() {
-	return this.dom.splice.apply(this.dom, arguments);
+	/*return this..splice.apply(this.dom, arguments);*/
+	return false; // TODO: implement splice. This is just a stub to get it to show up as an array.
 };
 
 sqElem.prototype.text = function(newValue) {
 	if (newValue === undefined) {
-		return this.dom[0].innerText;
+		return this[0].innerText;
 	}
-	slimQuery.each(this.dom, function() {
+	slimQuery.eachElem(this, function() {
 		this.innerText = newValue;
 	});
 	return this;
@@ -133,16 +146,16 @@ sqElem.prototype.text = function(newValue) {
 
 sqElem.prototype.html = function(newValue) {
 	if (newValue === undefined) {
-		return this.dom[0].innerHTML;
+		return this[0].innerHTML;
 	}
-	slimQuery.each(this.dom, function() {
+	slimQuery.eachElem(this, function() {
 		this.innerHTML = newValue;
 	});
 	return this;
 };
 
 sqElem.prototype.on = function(event, callback) {
-	slimQuery.each(this.dom, function() {
+	slimQuery.eachElem(this, function() {
 		this.addEventListener(slimQuery.eventMap[event], function(e) {
 			callback.call(e);
 		});
@@ -169,6 +182,14 @@ slimQuery.each = function(items, callback) {
 	}
 };
 
+slimQuery.eachElem = function(items, callback) {
+	return slimQuery.each(items, function(i) {
+		if (typeof i === "number") {
+			callback.call(this, i);
+		}
+	});
+};
+
 slimQuery.extend = function() {
 	// based off of https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign#Polyfill
 	var retVal = Object(arguments[0]);
@@ -187,7 +208,7 @@ slimQuery.find = function(search, start) {
 	if (start === undefined) {
 		start = $("html");
 	}
-	return $(start.dom[0].querySelectorAll(search));
+	return $(start[0].querySelectorAll(search));
 };
 
 slimQuery.noConflict = function() {
