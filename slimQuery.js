@@ -48,7 +48,8 @@ function sqElem(selector) {
 }
 
 sqElem.prototype = sqElem.fn = slimQuery.fn = {
-	jquery: "1.11.3", // this is for compatibility
+	jquery: "1.11.3", // this is for compatibility,
+	length: 0
 	noConflictFlag: false,
 	slimquery: "0.1"
 };
@@ -61,8 +62,26 @@ sqElem.prototype.attr = function(propertyName, value) {
 	if (value === undefined) {
 		return (this.dom[0].getAttribute(propertyName)||undefined);
 	}
-	window.slimQuery.each(this.dom, function() {
+	slimQuery.each(this.dom, function() {
 		this.setAttribute(propertyName, value);
+	});
+	return this;
+};
+
+sqElem.prototype.append = function(thing) {
+	var elem;
+	if (thing instanceof HTMLElement) {
+		elem = [ thing ];
+	} else if (thing instanceof sqElem) {
+		elem = thing.dom;
+	} else {
+		elem = $(thing).dom;
+	}
+	slimQuery.each(this.dom, function() {
+		var to = this;
+		slimQuery.each(elem, function() {
+			to.appendChild(this);
+		});
 	});
 	return this;
 };
@@ -71,7 +90,7 @@ sqElem.prototype.css = function(propertyName, value) {
 	if (value === undefined) {
 		return window.getComputedStyle(propertyName);
 	}
-	window.slimQuery.each(this.dom, function() {
+	slimQuery.each(this.dom, function() {
 		this.setAttribute("style", (this.getAttribute("style")||"") + propertyName + ":" + value + ";");
 	});
 	return this;
@@ -84,7 +103,7 @@ sqElem.prototype.data = function(propertyName, value) {
 		}
 		return JSON.parse(this.attr("data-sq-private-" + propertyName));
 	}
-	window.slimQuery.each(this.dom, function() {
+	slimQuery.each(this.dom, function() {
 		$(this).attr("data-sq-private-" + propertyName, JSON.stringify(value));
 	});
 	return this;
@@ -98,11 +117,15 @@ sqElem.prototype.find = function(selector) {
 	return slimQuery.find(selector, this);
 };
 
+sqElem.prototype.splice = function() {
+	return this.dom.splice.apply(this.dom, arguments);
+};
+
 sqElem.prototype.text = function(newValue) {
 	if (newValue === undefined) {
 		return this.dom[0].innerText;
 	}
-	window.slimQuery.each(this.dom, function() {
+	slimQuery.each(this.dom, function() {
 		this.innerText = newValue;
 	});
 	return this;
@@ -112,14 +135,14 @@ sqElem.prototype.html = function(newValue) {
 	if (newValue === undefined) {
 		return this.dom[0].innerHTML;
 	}
-	window.slimQuery.each(this.dom, function() {
+	slimQuery.each(this.dom, function() {
 		this.innerHTML = newValue;
 	});
 	return this;
 };
 
 sqElem.prototype.on = function(event, callback) {
-	window.slimQuery.each(this.dom, function() {
+	slimQuery.each(this.dom, function() {
 		this.addEventListener(slimQuery.eventMap[event], function(e) {
 			callback.call(e);
 		});
@@ -168,7 +191,7 @@ slimQuery.find = function(search, start) {
 };
 
 slimQuery.noConflict = function() {
-	window.slimQuery.noConflictFlag = true;
+	slimQuery.noConflictFlag = true;
 };
 
 slimQuery.nodeListToArray = function() {
