@@ -2,6 +2,7 @@ var slimQuery = function(selector) {
 	return sqElem.prototype.init(selector);
 };
 
+slimQuery.data = {};
 slimQuery.event = {
 	special: {}
 };
@@ -70,6 +71,18 @@ sqElem.prototype.addArray = function(array) {
 	return this;
 };
 
+sqElem.prototype.addClass = function(newClass) {
+	slimQuery.eachElem(this, function() {
+		var curClass = $(this).attr("class");
+		if (curClass === undefined) {
+			curClass = "";
+		}
+		curClass = curClass + " " + newClass;
+		$(this).attr("class", curClass);
+	});
+	return this;
+};
+
 sqElem.prototype.attr = function(propertyName, value) {
 	if (value === undefined) {
 		return (this[0].getAttribute(propertyName)||undefined);
@@ -98,9 +111,14 @@ sqElem.prototype.append = function(thing) {
 	return this;
 };
 
+sqElem.prototype.appendTo = function(thing) {
+	thing.append(this);
+	return this;
+};
+
 sqElem.prototype.css = function(propertyName, value) {
 	if (value === undefined) {
-		return window.getComputedStyle(propertyName);
+		return window.getComputedStyle(this[0], propertyName);
 	}
 	slimQuery.eachElem(this, function() {
 		this.setAttribute("style", (this.getAttribute("style")||"") + propertyName + ":" + value + ";");
@@ -110,14 +128,18 @@ sqElem.prototype.css = function(propertyName, value) {
 
 sqElem.prototype.data = function(propertyName, value) {
 	if (value === undefined) {
-		if (this.attr("data-sq-private-" + propertyName) === undefined) {
+		if (this.attr("data-sq-private-id") === undefined) {
 			return undefined;
 		}
-		return JSON.parse(this.attr("data-sq-private-" + propertyName));
+		return slimQuery.data[this.attr("data-sq-private-id")];
 	}
-	slimQuery.eachElem(this, function() {
-		$(this).attr("data-sq-private-" + propertyName, JSON.stringify(value));
-	});
+	var id = $(this[0]).attr("data-sq-private-id");
+	if (id === undefined) {
+		id = slimQuery.uniqueId();
+		$(this[0]).attr("data-sq-private-id", id);
+		slimQuery.data[id] = {};
+	}
+	slimQuery.data[id][propertyName] = value;
 	return this;
 };
 
@@ -142,6 +164,10 @@ sqElem.prototype.text = function(newValue) {
 		this.innerText = newValue;
 	});
 	return this;
+};
+
+sqElem.prototype.hasClass = function(newValue) {
+	return (this.attr("class").indexOf(newValue) > -1); // TODO: make this better
 };
 
 sqElem.prototype.html = function(newValue) {
@@ -174,6 +200,7 @@ sqElem.prototype.click = function(callback) {
 sqElem.prototype.trigger = function(event) {
 	// TODO: better event system
 	// it will stay stubbed until there is one
+	return this;
 };
 
 slimQuery.each = function(items, callback) {
@@ -224,6 +251,17 @@ slimQuery.nodeListToArray = function() {
 
     return a;
 }
+
+slimQuery.proxy = function(fn, context) {
+	var newFunc  = function() {
+		return fn.apply( context || this, arguments);
+	};
+	return newFunc;
+};
+
+slimQuery.uniqueId = function() {
+	return "slimQuery-" + Math.random().toString(36).substr(2, 10) + Math.random().toString(36).substr(2, 10);
+};
 
 window.sQ = window.slimQuery;
 if (!slimQuery.noConflictFlag) {
